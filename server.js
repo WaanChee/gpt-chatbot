@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import axios from "axios";
+import data from "./data.js";
 
 dotenv.config();
 /*
@@ -34,6 +35,34 @@ app.post("/api/generate", async (req, res) => {
       .status(400)
       .json({ error: "Prompt exceeds maximum length of 300 characters" });
   }
+  const keywords = prompt.toLowerCase().split("");
+
+  let systemPrompts = data
+    .filter((item) =>
+      item.tags?.split(" ").some((tag) => keywords.includes(tag))
+    )
+    .map((item) => item.content);
+  const chatbotInfoItem = data.find(
+    (item) => item.name === "Chatbot Information"
+  );
+  const chatbotInfo = chatbotInfoItem ? chatbotInfoItem.content : "";
+
+  if (chatbotInfo) {
+    systemPrompts.unshift(chatbotInfo);
+  }
+
+  if (systemPrompts.length === 1 && chatbotInfo) {
+    systemPrompts = data.map((item) => item.content);
+  }
+
+  console.log(
+    "Selected object names:",
+    data
+      .filter((item) =>
+        item.tags?.split(" ").some((tag) => keywords.includes(tag))
+      )
+      .map((item) => item.name)
+  );
 
   try {
     const response = await axios.post(
@@ -46,6 +75,7 @@ app.post("/api/generate", async (req, res) => {
             role: "system",
             content: "You are a chatbot. Always respond in casual tone.",
           },
+          ...systemPrompts.map((content) => ({ role: "system", content })),
           { role: "user", content: prompt },
         ],
       },

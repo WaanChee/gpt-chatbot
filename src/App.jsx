@@ -1,35 +1,74 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useState } from "react";
+import axios from "axios";
 
-function App() {
-  const [count, setCount] = useState(0)
+export default function App() {
+  // Create our prompt use state
+  const [prompt, setPrompt] = useState("");
+  //const [response, setResponse] = useState("");
+  const [error, setError] = useState("ERROR!");
+  const [messages, setMessages] = useState([]);
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setError("");
+    //setResponse("");
+
+    try {
+      const response = await axios.post("http://localhost:3001/api/generate", {
+        prompt,
+      });
+
+      const data = response.data;
+      if (data.reply) {
+        const userMessage = { sender: "user", text: prompt };
+        const aiMessage = { sender: "ai", text: data.reply };
+        setMessages([...messages, userMessage, aiMessage]);
+        //setResponse(data.reply);
+        setPrompt("");
+      } else {
+        throw new Error("Unexpected response format from server");
+      }
+    } catch (error) {
+      console.log("There was an error:", error);
+      setError(error.response?.data?.error || error.message);
+    }
+  };
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+    <div className="container">
+      <div className="text-center">
+        <div className="header-container">
+          <h1 className="text-center my-4">Sigmund</h1>
+          <p>The Sigma School Chatbot</p>
+        </div>
       </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
+      <div className="row col-lg-12">
+        <div className="form-container">
+          {messages.map((msg, index) => {
+            return (
+              <div key={index} className={`message-bubble ${msg.sender}`}>
+                {msg.text}
+              </div>
+            );
+          })}
+        </div>
+        <form className="form-container" onSubmit={handleSubmit}>
+          <input
+            type="text"
+            onChange={(event) => {
+              setPrompt(event.target.value);
+            }}
+            value={prompt}
+            className="form-control row"
+            placeholder="Type your message..."
+          />
+          <button type="submit" className="btn btn-primary">
+            Submit
+          </button>
+        </form>
+        {/* {response && <div className="mt-4 alert alert-success">{response}</div>} */}
+        {error && <div className="mt-4 alert alert-danger">{error}</div>}
       </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    </div>
+  );
 }
-
-export default App
