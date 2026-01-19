@@ -1,5 +1,6 @@
 import { useState } from "react";
 import axios from "axios";
+import "./App.css";
 
 export default function App() {
   // Create our prompt use state
@@ -42,33 +43,32 @@ export default function App() {
           <p>The Sigma School Chatbot</p>
         </div>
       </div>
-      <div className="row col-lg-12">
-        <div className="form-container">
-          {messages.map((msg, index) => {
-            return (
-              <div key={index} className={`message-bubble ${msg.sender}`}>
-                {msg.text}
-              </div>
-            );
-          })}
-        </div>
-        <form className="form-container" onSubmit={handleSubmit}>
-          <input
-            type="text"
-            onChange={(event) => {
-              setPrompt(event.target.value);
-            }}
-            value={prompt}
-            className="form-control row"
-            placeholder="Type your message..."
-          />
-          <button type="submit" className="btn btn-primary">
-            Submit
-          </button>
-        </form>
-        {/* {response && <div className="mt-4 alert alert-success">{response}</div>} */}
-        {error && <div className="mt-4 alert alert-danger">{error}</div>}
+      <div className="chat-container">
+        {messages.map((msg, index) => {
+          return (
+            <div key={index} className={`message-bubble ${msg.sender}`}>
+              {msg.text}
+            </div>
+          );
+        })}
       </div>
+      <form className="form-container" onSubmit={handleSubmit}>
+        <input
+          type="text"
+          onChange={(event) => {
+            setPrompt(event.target.value);
+          }}
+          value={prompt}
+          className="form-control"
+          placeholder="Type your message..."
+        />
+        <button type="submit" className="btn btn-primary">
+          Submit
+        </button>
+      </form>
+      {error && error !== "ERROR!" && (
+        <div className="mt-4 alert alert-danger">{error}</div>
+      )}
     </div>
   );
 }

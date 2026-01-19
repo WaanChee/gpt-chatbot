@@ -2,7 +2,7 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import axios from "axios";
-import data from "./data.js";
+import db, { getAllTopics, getTopicsByKeywords } from "./db.js";
 
 dotenv.config();
 /*
@@ -35,33 +35,45 @@ app.post("/api/generate", async (req, res) => {
       .status(400)
       .json({ error: "Prompt exceeds maximum length of 300 characters" });
   }
-  const keywords = prompt.toLowerCase().split("");
 
-  let systemPrompts = data
-    .filter((item) =>
-      item.tags?.split(" ").some((tag) => keywords.includes(tag))
-    )
+  const keywords = prompt.toLowerCase().split(" ");
+
+  // Get all topics from database
+  const allTopics = getAllTopics();
+
+  // Filter topics by matching keywords with tags
+  let systemPrompts = allTopics
+    .filter((item) => {
+      if (!item.tags) return false;
+      const topicTags = item.tags.split(" ");
+      return topicTags.some((tag) => keywords.includes(tag));
+    })
     .map((item) => item.content);
-  const chatbotInfoItem = data.find(
-    (item) => item.name === "Chatbot Information"
+
+  // Get chatbot information
+  const chatbotInfoTopic = allTopics.find(
+    (item) => item.name === "Chatbot Information",
   );
-  const chatbotInfo = chatbotInfoItem ? chatbotInfoItem.content : "";
+  const chatbotInfo = chatbotInfoTopic ? chatbotInfoTopic.content : "";
 
   if (chatbotInfo) {
     systemPrompts.unshift(chatbotInfo);
   }
 
+  // If no matching topics found, use all topics
   if (systemPrompts.length === 1 && chatbotInfo) {
-    systemPrompts = data.map((item) => item.content);
+    systemPrompts = allTopics.map((item) => item.content);
   }
 
   console.log(
-    "Selected object names:",
-    data
-      .filter((item) =>
-        item.tags?.split(" ").some((tag) => keywords.includes(tag))
-      )
-      .map((item) => item.name)
+    "Selected topics:",
+    allTopics
+      .filter((item) => {
+        if (!item.tags) return false;
+        const topicTags = item.tags.split(" ");
+        return topicTags.some((tag) => keywords.includes(tag));
+      })
+      .map((item) => item.name),
   );
 
   try {
@@ -84,7 +96,7 @@ app.post("/api/generate", async (req, res) => {
           "Content-Type": "application/json",
           Authorization: `Bearer ${API_KEY}`,
         },
-      }
+      },
     );
 
     const { prompt_tokens, completion_tokens, total_tokens } =
@@ -109,6 +121,17 @@ app.post("/api/generate", async (req, res) => {
 // get / welcome to my api
 app.get("/", (req, res) => {
   res.send("Welcome to my api!");
+});
+
+// Get all topics from database
+app.get("/api/topics", (req, res) => {
+  try {
+    const topics = getAllTopics();
+    res.json(topics);
+  } catch (error) {
+    console.error("Error fetching topics:", error.message);
+    res.status(500).json({ error: "Failed to fetch topics" });
+  }
 });
 
 app.listen(PORT, () => {

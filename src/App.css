@@ -26,3 +26,29 @@
   text-align: right;
   margin-left: auto;
 }
+
+.message-bubble.ai {
+  background-color: #f8d7da;
+  align-self: flex-start;
+  text-align: left;
+  margin-right: auto;
+}
+
+.form-container {
+  display: flex;
+  gap: 10px;
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  max-width: 600px;
+  background-color: white;
+  padding: 10px 0;
+}
+
+.form-control {
+  flex: 1;
+}
+
+.btn {
+  flex-shrink: 0;
+}
